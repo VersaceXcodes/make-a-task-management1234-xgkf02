@@ -1,7 +1,6 @@
 import React, { ErrorBoundary, lazy, Suspense, useEffect } from "react";
 import { Routes, Route, Navigate, Outlet, useNavigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { PersistorProvider, Persistor } from "react-query/persist";
 import { RecoilRoot } from "recoil";
 
 // Import Global Shared Views
@@ -25,7 +24,7 @@ const UV_KanbanView = lazy(() => import("@/components/views/UV_KanbanView.tsx"))
 // Import Zustand Store
 import { useAppStore } from "@/store/main";
 
-// Initialize Query Client and Persistor
+// Initialize Query Client
 const queryClient = new QueryClient();
 const persistor: Persistor = new Persistor({ storage: localStorage });
 
@@ -44,119 +43,117 @@ const App: React.FC = () => {
   return (
     <RecoilRoot>
       <QueryClientProvider client={queryClient}>
-        <PersistorProvider persistor={persistor}>
-          <Suspense fallback={<div>Loading...</div>}>
-            {auth?.token && <GV_GlobalSidebar />}
+        <Suspense fallback={<div>Loading...</div>}>
+          {auth?.token && <GV_GlobalSidebar />}
 
-            <div className="min-h-screen bg-gray-100">
-              <GV_TopNav
-                isAuthenticated={Boolean(auth?.token)}
-                onLogout={() => {
-                  useAppStore.setState({ auth: null });
-                  localStorage.removeItem("authToken");
-                  navigate("/login");
-                }}
+          <div className="min-h-screen bg-gray-100">
+            <GV_TopNav
+              isAuthenticated={Boolean(auth?.token)}
+              onLogout={() => {
+                useAppStore.setState({ auth: null });
+                localStorage.removeItem("authToken");
+                navigate("/login");
+              }}
+            />
+
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Outlet />}>
+                <Route index element={<UV_Landing />} />
+                <Route path="login" element={<UV_Login />} />
+                <Route path="register" element={<UV_SignUp />} />
+              </Route>
+
+              {/* Authenticated Routes */}
+              <Route
+                path="/dashboard"
+                element={
+                  auth?.token ? (
+                    <UV_Dashboard />
+                  ) : (
+                    <Navigate to="/login" />
+                  )
+                }
+              />
+              <Route
+                path="/tasks"
+                element={
+                  auth ? (
+                    <UV_TaskListView />
+                  ) : (
+                    <Navigate to="/login" />
+                  )
+                }
+              />
+              <Route
+                path="/tasks/:task_id"
+                element={
+                  auth ? (
+                    <UV_TaskDetailsView />
+                  ) : (
+                    <Navigate to="/login" />
+                  )
+                }
+              />
+              <Route
+                path="/projects"
+                element={
+                  auth ? (
+                    <UV_ProjectView />
+                  ) : (
+                    <Navigate to="/login" />
+                  )
+                }
+              />
+              <Route
+                path="/projects/:project_id"
+                element={
+                  auth ? (
+                    <UV_ProjectView />
+                  ) : (
+                    <Navigate to="/login" />
+                  )
+                }
+              />
+              <Route
+                path="/reports"
+                element={
+                  auth ? (
+                    <UV_ReportsView />
+                  ) : (
+                    <Navigate to="/login" />
+                  )
+                }
+              />
+              <Route
+                path="/settings/recurring"
+                element={
+                  auth ? (
+                    <UV_RecurringTaskSettingsView />
+                  ) : (
+                    <Navigate to="/login" />
+                  )
+                }
+              />
+              <Route
+                path="/kanban"
+                element={
+                  auth ? (
+                    <UV_KanbanView />
+                  ) : (
+                    <Navigate to="/login" />
+                  )
+                }
               />
 
-              <Routes>
-                {/* Public Routes */}
-                <Route path="/" element={<Outlet />}>
-                  <Route index element={<UV_Landing />} />
-                  <Route path="login" element={<UV_Login />} />
-                  <Route path="register" element={<UV_SignUp />} />
-                </Route>
+              {/* Fallback Route */}
+              <Route path="*" element={<div>404 - Page Not Found</div>} />
+            </Routes>
 
-                {/* Authenticated Routes */}
-                <Route
-                  path="/dashboard"
-                  element={
-                    auth?.token ? (
-                      <UV_Dashboard />
-                    ) : (
-                      <Navigate to="/login" />
-                    )
-                  }
-                />
-                <Route
-                  path="/tasks"
-                  element={
-                    auth ? (
-                      <UV_TaskListView />
-                    ) : (
-                      <Navigate to="/login" />
-                    )
-                  }
-                />
-                <Route
-                  path="/tasks/:task_id"
-                  element={
-                    auth ? (
-                      <UV_TaskDetailsView />
-                    ) : (
-                      <Navigate to="/login" />
-                    )
-                  }
-                />
-                <Route
-                  path="/projects"
-                  element={
-                    auth ? (
-                      <UV_ProjectView />
-                    ) : (
-                      <Navigate to="/login" />
-                    )
-                  }
-                />
-                <Route
-                  path="/projects/:project_id"
-                  element={
-                    auth ? (
-                      <UV_ProjectView />
-                    ) : (
-                      <Navigate to="/login" />
-                    )
-                  }
-                />
-                <Route
-                  path="/reports"
-                  element={
-                    auth ? (
-                      <UV_ReportsView />
-                    ) : (
-                      <Navigate to="/login" />
-                    )
-                  }
-                />
-                <Route
-                  path="/settings/recurring"
-                  element={
-                    auth ? (
-                      <UV_RecurringTaskSettingsView />
-                    ) : (
-                      <Navigate to="/login" />
-                    )
-                  }
-                />
-                <Route
-                  path="/kanban"
-                  element={
-                    auth ? (
-                      <UV_KanbanView />
-                    ) : (
-                      <Navigate to="/login" />
-                    )
-                  }
-                />
-
-                {/* Fallback Route */}
-                <Route path="*" element={<div>404 - Page Not Found</div>} />
-              </Routes>
-
-              <GV_GlobalNotifications />
-              <GV_GlobalFooter />
-            </div>
-          </Suspense>
-        </PersistorProvider>
+            <GV_GlobalNotifications />
+            <GV_GlobalFooter />
+          </div>
+        </Suspense>
       </QueryClientProvider>
     </RecoilRoot>
   );
